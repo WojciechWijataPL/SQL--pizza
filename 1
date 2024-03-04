@@ -1,0 +1,91 @@
+SELECT pizza_id, order_id, pizza_name_id, quantity, order_date, order_time, unit_price, total_price, pizza_size, pizza_category, pizza_ingredients, pizza_name
+FROM pizza.`pizza_sales.csv`
+limit 5;
+
+
+/* Let's find pizza with Mushrooms */
+
+SELECT pizza_name_id, quantity, total_price, pizza_size, pizza_category
+FROM pizza.`pizza_sales.csv`
+where pizza_ingredients like '%Mushrooms%';
+
+
+
+/* Let's find pizza size L and price below 20 */
+
+
+SELECT distinct pizza_name_id, quantity, total_price, pizza_size, pizza_category, pizza_name
+FROM 
+(
+    SELECT pizza_name_id, quantity, total_price, pizza_size, pizza_category, unit_price, pizza_name
+    FROM `pizza_sales.csv` psc 
+    WHERE pizza_size = 'L'
+) as me
+WHERE unit_price < 20;
+
+
+/* Revenue and percentage of price */
+
+
+SELECT pizza_size, CAST(SUM(total_price) AS DECIMAL(9,2)) AS revenue,
+ROUND( sum(total_price)*100/(select sum(total_price) from `pizza_sales.csv` psc ), 2) as percentage
+FROM `pizza_sales.csv` psc 
+GROUP BY pizza_size
+ORDER BY pizza_size;
+
+
+
+/* Let's see the most popular hours */
+
+SELECT EXTRACT(HOUR FROM order_time) AS order_hour, COUNT(*) AS order_count
+FROM `pizza_sales.csv`
+GROUP BY order_hour
+ORDER BY order_count DESC
+LIMIT 5;
+
+
+
+/* Percentage avg price to total price */
+WITH piz AS (
+    SELECT ROUND(AVG(total_price), 2) AS Avgprice
+    FROM `pizza_sales.csv`
+)
+SELECT psc.pizza_name, psc.pizza_category, psc.total_price, piz.Avgprice, 
+cast((psc.total_price/piz.Avgprice) as decimal (10,2)) as prc
+FROM `pizza_sales.csv` psc 
+CROSS JOIN piz;
+
+
+SELECT pizza_name, 
+       (SELECT pizza_size FROM `pizza_sales.csv` psc_internal WHERE psc_internal.pizza_size = 'M') AS pizza_size
+FROM `pizza_sales.csv` psc
+GROUP BY pizza_name;
+
+
+/* Date between */
+SELECT *
+FROM `pizza_sales.csv` psc 
+WHERE order_date BETWEEN '01-01-2018' AND '01-01-2020';
+
+
+
+
+/* The most popular Veggie pizza */
+SELECT distinct pizza_name, count(order_id) as 'order'
+FROM `pizza_sales.csv` psc 
+WHERE pizza_category LIKE '%Veggie%'
+group by 1
+order by 2 desc;
+
+
+
+/* devide to equal 4 pieces */
+SELECT DISTINCT pizza_name, NTILE(4) OVER (ORDER BY pizza_name) AS tile
+FROM `pizza_sales.csv` psc;
+
+
+/* let's see categories */
+SELECT RIGHT(pizza_name_id, 1) AS last_char, COUNT(*) AS count_last_char
+FROM `pizza_sales.csv` psc
+GROUP BY last_char;
+
